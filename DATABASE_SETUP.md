@@ -7,6 +7,12 @@ This guide will help you set up the PostgreSQL database for the OpenNDS Login ap
 The easiest way to get started is using Docker Compose:
 
 ```bash
+# Copy the environment template (optional - docker-compose uses defaults if not present)
+cp .env.example .env
+
+# Edit .env to customize database credentials if needed
+# Default values: POSTGRES_USER=postgres, POSTGRES_PASSWORD=postgres, POSTGRES_DB=opennds
+
 # Start PostgreSQL
 docker compose up -d postgres
 
@@ -16,6 +22,8 @@ sleep 5
 # The application will automatically create the schema on first use
 npm run dev
 ```
+
+**Note:** Docker Compose will use environment variables from `.env` file if present, otherwise it will fall back to default values (postgres/postgres/opennds).
 
 ## Manual PostgreSQL Setup
 
@@ -67,12 +75,28 @@ This will create:
 
 ## Environment Variables
 
-Create a `.env` file in the root directory:
+Create a `.env` file in the root directory (you can copy from `.env.example`):
+
+```bash
+cp .env.example .env
+```
+
+The `.env` file should contain:
 
 ```env
-# PostgreSQL Connection
+# PostgreSQL Database Configuration for Docker Compose
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=opennds
+
+# PostgreSQL Connection for the application
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/opennds
+
+# Admin JWT Secret
+ADMIN_JWT_SECRET=your-secret-key-change-in-production
 ```
+
+**Important:** If you customize the Docker database credentials (`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`), make sure to update the `DATABASE_URL` accordingly.
 
 ## Accessing the Admin Panel
 
