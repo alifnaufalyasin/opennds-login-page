@@ -108,16 +108,18 @@ POSTGRES_PASSWORD=postgres
 POSTGRES_DB=opennds
 
 # PostgreSQL Connection for the application
+# IMPORTANT: Update username and password here to match POSTGRES_USER and POSTGRES_PASSWORD above
 # Note: Use 'localhost' as hostname when running the app outside Docker
 # Use 'postgres' (the service name) as hostname when running the app inside Docker
-DATABASE_URL=postgresql://username:password@localhost:5432/opennds
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/opennds
 
 # Admin JWT Secret
 ADMIN_JWT_SECRET=your-secret-key-change-in-production
 ```
 
 **Note:** 
-- If using Docker Compose, the database credentials in `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB` will be used by the PostgreSQL container. Make sure to update `DATABASE_URL` to match these values.
+- Keep the username and password in `DATABASE_URL` in sync with `POSTGRES_USER` and `POSTGRES_PASSWORD`.
+- If using Docker Compose, the database credentials will be used by the PostgreSQL container.
 - When running the Next.js app outside Docker (e.g., `npm run dev`), use `localhost` as the hostname in `DATABASE_URL`.
 - When running the Next.js app inside Docker, use `postgres` (the Docker service name) as the hostname in `DATABASE_URL`.
 
