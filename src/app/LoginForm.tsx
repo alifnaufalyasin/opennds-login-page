@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import {
   Box,
@@ -17,15 +17,9 @@ export function LoginForm() {
   const searchParams = useSearchParams()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [hid, setHid] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  useEffect(() => {
-    const hidParam = searchParams.get('hid')
-    if (hidParam) {
-      setHid(hidParam)
-    }
-  }, [searchParams])
+  const hid = searchParams.get('hid') || ''
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
