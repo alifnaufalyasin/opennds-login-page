@@ -97,9 +97,25 @@ Create a `.env` file in the root directory:
 
 ```env
 DATABASE_URL=postgresql://username:password@localhost:5432/opennds
+ADMIN_JWT_SECRET=your-secret-key-change-in-production
 ```
 
 3. The database schema will be automatically created on first API request.
+
+4. **Create the initial admin user:**
+
+The admin user needs to be created in the database with username `admin` and password `admin`:
+
+```bash
+# Using Docker PostgreSQL
+docker exec -it login-page-postgres-1 psql -U postgres -d opennds -c \
+  "INSERT INTO users (username, password, expired_time) VALUES ('admin', '\$2b\$10\$i0/B9njRJ5DT7dl34pPDNuakaKKCE8sXZ7dmbwPuDuc7j3ylHgSoq', NULL) ON CONFLICT (username) DO NOTHING;"
+```
+
+Or use the provided setup script (after starting the app once to create the schema):
+```bash
+node scripts/setup-db.mjs
+```
 
 ### Development
 
@@ -113,9 +129,15 @@ Open [http://localhost:3000](http://localhost:3000) with your browser. You'll be
 
 ### Admin Access
 
-Access the admin panel at [http://localhost:3000/admin](http://localhost:3000/admin)
+1. Navigate to [http://localhost:3000/admin/login](http://localhost:3000/admin/login)
+2. Login with username: `admin` and password: `admin`
+3. **Important:** Change the default password immediately after first login using the "Change Password" button
+4. The admin user never expires - you can always access the admin panel
 
 From the admin panel you can:
+- **Login required:** Access at `/admin/login` with username: `admin`, password: `admin`
+- **Change password:** Update admin password without entering old password
+- **Logout:** End admin session securely
 - View all users and their status
 - Create individual users
 - Edit existing users (username, password, expiration)
@@ -157,7 +179,8 @@ After successful authentication:
 
 - **Infinite**: NULL expired_time means user never expires
 - **Timed**: Specific timestamp for expiration
-- Expired users cannot log in
+- **Expired users cannot log in** via `/login`
+- **Admin never expires:** Admin can always access `/admin/login` regardless of expired_time
 - Admin panel shows expiry status with color badges
 
 ## Build
