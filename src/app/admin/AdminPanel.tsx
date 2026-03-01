@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Box,
   Button,
@@ -28,9 +29,12 @@ interface User {
 }
 
 export function AdminPanel() {
+  const router = useRouter()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [checkingAuth, setCheckingAuth] = useState(true)
   
   // Create/Edit user state
   const [editingUser, setEditingUser] = useState<User | null>(null)
@@ -43,11 +47,38 @@ export function AdminPanel() {
   const [bulkPrefix, setBulkPrefix] = useState('user')
   const [bulkDuration, setBulkDuration] = useState('1day')
   
+  // Password change state
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  
   // Dialog states
   const { open: openUserDialog, onOpen: onOpenUserDialog, onClose: onCloseUserDialog } = useDisclosure()
   const { open: openBulkDialog, onOpen: onOpenBulkDialog, onClose: onCloseBulkDialog } = useDisclosure()
   const { open: openDeleteDialog, onOpen: onOpenDeleteDialog, onClose: onCloseDeleteDialog } = useDisclosure()
+  const { open: openPasswordDialog, onOpen: onOpenPasswordDialog, onClose: onClosePasswordDialog } = useDisclosure()
   const [userToDelete, setUserToDelete] = useState<User | null>(null)
+
+  // Check authentication
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/admin/verify')
+        if (response.ok) {
+          setIsAuthenticated(true)
+          fetchUsers()
+        } else {
+          router.push('/admin/login')
+        }
+      } catch (err) {
+        console.error('Auth check failed:', err)
+        router.push('/admin/login')
+      } finally {
+        setCheckingAuth(false)
+      }
+    }
+    
+    checkAuth()
+  }, [router])
 
   // Fetch users
   const fetchUsers = async () => {
@@ -69,9 +100,50 @@ export function AdminPanel() {
     }
   }
 
-  useEffect(() => {
-    fetchUsers()
-  }, [])
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/admin/logout', { method: 'POST' })
+      router.push('/admin/login')
+    } catch (err) {
+      console.error('Logout failed:', err)
+    }
+  }
+
+  // Handle password change
+  const handleChangePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match')
+      return
+    }
+    
+    if (newPassword.length < 4) {
+      setError('Password must be at least 4 characters')
+      return
+    }
+    
+    try {
+      const response = await fetch('/api/admin/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newPassword }),
+      })
+      
+      const data = await response.json()
+      
+      if (response.ok) {
+        onClosePasswordDialog()
+        setNewPassword('')
+        setConfirmPassword('')
+        setError('')
+      } else {
+        setError(data.error || 'Failed to change password')
+      }
+    } catch (err) {
+      setError('Failed to change password')
+      console.error(err)
+    }
+  }
 
   // Open create user dialog
   const handleCreate = () => {
@@ -209,19 +281,34 @@ export function AdminPanel() {
 
   return (
     <Box minH="100vh" bg="gray.50" py={8}>
-      <Container maxW="container.xl">
-        <Stack gap={6}>
-          <Flex justify="space-between" align="center">
-            <Heading size="2xl">User Management</Heading>
-            <Flex gap={2}>
-              <Button colorScheme="blue" onClick={handleCreate}>
-                Add User
-              </Button>
-              <Button colorScheme="green" onClick={onOpenBulkDialog}>
-                Generate Users
-              </Button>
+      {checkingAuth ? (
+        <Container maxW="container.xl">
+          <Text>Checking authentication...</Text>
+        </Container>
+      ) : !isAuthenticated ? (
+        <Container maxW="container.xl">
+          <Text>Redirecting to login...</Text>
+        </Container>
+      ) : (
+        <Container maxW="container.xl">
+          <Stack gap={6}>
+            <Flex justify="space-between" align="center">
+              <Heading size="2xl">User Management</Heading>
+              <Flex gap={2}>
+                <Button onClick={onOpenPasswordDialog}>
+                  Change Password
+                </Button>
+                <Button colorScheme="blue" onClick={handleCreate}>
+                  Add User
+                </Button>
+                <Button colorScheme="green" onClick={onOpenBulkDialog}>
+                  Generate Users
+                </Button>
+                <Button colorScheme="red" onClick={handleLogout}>
+                  Logout
+                </Button>
+              </Flex>
             </Flex>
-          </Flex>
 
           {error && (
             <Box bg="red.50" border="1px" borderColor="red.200" p={3} borderRadius="md">
@@ -428,7 +515,49 @@ export function AdminPanel() {
             </Dialog.Content>
           </Dialog.Positioner>
         </Dialog.Root>
-      </Container>
+
+        {/* Change Password Dialog */}
+        <Dialog.Root open={openPasswordDialog} onOpenChange={onClosePasswordDialog}>
+          <Dialog.Backdrop />
+          <Dialog.Positioner>
+            <Dialog.Content>
+              <Dialog.Header>
+                <Dialog.Title>Change Admin Password</Dialog.Title>
+              </Dialog.Header>
+              <Dialog.Body>
+                <Stack gap={4}>
+                  <Field.Root>
+                    <Field.Label>New Password</Field.Label>
+                    <Input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Enter new password"
+                    />
+                  </Field.Root>
+                  
+                  <Field.Root>
+                    <Field.Label>Confirm Password</Field.Label>
+                    <Input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm new password"
+                    />
+                  </Field.Root>
+                </Stack>
+              </Dialog.Body>
+              <Dialog.Footer>
+                <Button onClick={onClosePasswordDialog}>Cancel</Button>
+                <Button colorScheme="blue" onClick={handleChangePassword}>
+                  Change Password
+                </Button>
+              </Dialog.Footer>
+            </Dialog.Content>
+          </Dialog.Positioner>
+        </Dialog.Root>
+        </Container>
+      )}
     </Box>
   )
 }

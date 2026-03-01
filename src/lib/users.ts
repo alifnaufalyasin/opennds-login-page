@@ -103,6 +103,8 @@ export async function deleteUser(id: number): Promise<boolean> {
 }
 
 // Authenticate user and update login times
+// Authenticate user and update login times
+// Note: This function checks expiration time - expired users cannot login
 export async function authenticateUser(username: string, password: string): Promise<User | null> {
   const user = await getUserByUsername(username)
   
@@ -116,7 +118,7 @@ export async function authenticateUser(username: string, password: string): Prom
     return null
   }
 
-  // Check if user has expired
+  // Check if user has expired (admin should never expire with expired_time = NULL)
   if (user.expired_time && new Date(user.expired_time) < new Date()) {
     return null
   }

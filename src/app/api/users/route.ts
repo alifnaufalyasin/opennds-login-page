@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAllUsers, createUser, updateUser, deleteUser, generateUsers, calculateExpirationTime } from '@/lib/users'
 import { initDatabase } from '@/lib/db'
+import { verifyAdminToken } from '@/lib/auth'
 
 // Initialize database on first request
 let dbInitialized = false
@@ -12,10 +13,29 @@ async function ensureDatabase() {
   }
 }
 
+// Verify admin authentication
+async function verifyAdmin(request: NextRequest): Promise<boolean> {
+  const token = request.cookies.get('admin-token')?.value
+  if (!token) return false
+  
+  const payload = await verifyAdminToken(token)
+  return payload !== null && payload.username === 'admin'
+}
+
 // GET /api/users - Get all users
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     await ensureDatabase()
+    
+    // Check authentication
+    const isAdmin = await verifyAdmin(request)
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+    
     const users = await getAllUsers()
     
     // Remove password from response
@@ -38,6 +58,16 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     await ensureDatabase()
+    
+    // Check authentication
+    const isAdmin = await verifyAdmin(request)
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+    
     const body = await request.json()
     
     // Check if this is a bulk generation request
@@ -104,6 +134,16 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     await ensureDatabase()
+    
+    // Check authentication
+    const isAdmin = await verifyAdmin(request)
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+    
     const body = await request.json()
     const { id, username, password, expired_time } = body
     
@@ -145,6 +185,16 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     await ensureDatabase()
+    
+    // Check authentication
+    const isAdmin = await verifyAdmin(request)
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+    
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
     
