@@ -41,11 +41,14 @@ export function LoginForm() {
     setIsLoading(true)
     
     // Note: This is a simple redirect to OpenNDS authentication endpoint.
-    // Actual credential validation is handled by the OpenNDS system after redirect.
-    // The username and password are collected here for future integration with
-    // OpenNDS authentication API if needed.
+    // The username and password fields are collected here for future integration
+    // with OpenNDS authentication API if needed. Currently, actual credential 
+    // validation is handled by the OpenNDS system after redirect.
+    
+    // Brief delay to show loading state before redirect
     setTimeout(() => {
-      window.location.href = `http://10.1.1.1/opennds_auth/?hid=${hid}`
+      // Encode the hid parameter to prevent injection issues
+      window.location.href = `http://10.1.1.1/opennds_auth/?hid=${encodeURIComponent(hid)}`
     }, 500)
   }
 
