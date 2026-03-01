@@ -1,11 +1,5 @@
-import { Suspense } from 'react'
-import { LoginForm } from './LoginForm'
+import { redirect } from 'next/navigation'
 
 export default function Home() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <LoginForm />
-    </Suspense>
-  )
+  redirect('/login')
 }
-

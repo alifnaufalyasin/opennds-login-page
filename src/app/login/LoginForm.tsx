@@ -18,22 +18,34 @@ export function LoginForm() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
 
   const hid = searchParams.get('hid') || ''
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    setError('')
+    
+    // Validate that hid parameter exists and is alphanumeric
+    if (!hid) {
+      setError('Missing hid parameter in URL')
+      return
+    }
+
+    // Basic validation: hid should be alphanumeric and not empty
+    if (!/^[a-zA-Z0-9]+$/.test(hid)) {
+      setError('Invalid session ID format')
+      return
+    }
+
     setIsLoading(true)
     
-    // Simulate login (in a real app, you would validate credentials)
-    // For this example, we'll just redirect after a brief delay
+    // Note: This is a simple redirect to OpenNDS authentication endpoint.
+    // Actual credential validation is handled by the OpenNDS system after redirect.
+    // The username and password are collected here for future integration with
+    // OpenNDS authentication API if needed.
     setTimeout(() => {
-      if (hid) {
-        window.location.href = `http://10.1.1.1/opennds_auth/?hid=${hid}`
-      } else {
-        alert('Missing hid parameter')
-        setIsLoading(false)
-      }
+      window.location.href = `http://10.1.1.1/opennds_auth/?hid=${hid}`
     }, 500)
   }
 
@@ -50,6 +62,12 @@ export function LoginForm() {
 
               <form onSubmit={handleSubmit}>
                 <Stack gap={4}>
+                  {error && (
+                    <Box bg="red.50" border="1px" borderColor="red.200" p={3} borderRadius="md">
+                      <Text color="red.600" fontSize="sm">{error}</Text>
+                    </Box>
+                  )}
+
                   <Box>
                     <Text mb={2} fontWeight="medium">Username</Text>
                     <Input
@@ -88,7 +106,6 @@ export function LoginForm() {
                     size="lg"
                     width="full"
                     loading={isLoading}
-                    disabled={isLoading}
                   >
                     {isLoading ? 'Logging in...' : 'Login'}
                   </Button>
