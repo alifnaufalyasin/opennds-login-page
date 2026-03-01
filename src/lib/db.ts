@@ -26,13 +26,20 @@ export async function initDatabase() {
       )
     `)
     
-    // Create index on username for faster lookups
+    // Create index on username for faster lookups (ignore if exists)
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)
-    `)
+    `).catch(() => {
+      // Ignore if index already exists
+    })
     
     console.log('Database initialized successfully')
-  } catch (error) {
+  } catch (error: unknown) {
+    // Ignore if table already exists
+    if (error && typeof error === 'object' && 'code' in error && error.code === '23505') {
+      console.log('Database already initialized')
+      return
+    }
     console.error('Error initializing database:', error)
     throw error
   } finally {
