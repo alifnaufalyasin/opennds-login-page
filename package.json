@@ -13,8 +13,12 @@
     "@chakra-ui/react": "^3.33.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@types/bcrypt": "^6.0.0",
+    "@types/pg": "^8.18.0",
+    "bcrypt": "^6.0.0",
     "framer-motion": "^12.34.3",
     "next": "16.1.6",
+    "pg": "^8.19.0",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   },

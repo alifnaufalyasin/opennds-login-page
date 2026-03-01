@@ -22,7 +22,7 @@ export function LoginForm() {
 
   const hid = searchParams.get('hid') || ''
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     
@@ -40,16 +40,31 @@ export function LoginForm() {
 
     setIsLoading(true)
     
-    // Note: This is a simple redirect to OpenNDS authentication endpoint.
-    // The username and password fields are collected here for future integration
-    // with OpenNDS authentication API if needed. Currently, actual credential 
-    // validation is handled by the OpenNDS system after redirect.
-    
-    // Brief delay to show loading state before redirect
-    setTimeout(() => {
-      // Encode the hid parameter to prevent injection issues
+    try {
+      // Authenticate user against database
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      })
+      
+      const data = await response.json()
+      
+      if (!response.ok) {
+        setError(data.error || 'Authentication failed')
+        setIsLoading(false)
+        return
+      }
+      
+      // Authentication successful, redirect to OpenNDS
       window.location.href = `http://10.1.1.1/opennds_auth/?hid=${encodeURIComponent(hid)}`
-    }, 500)
+    } catch (error) {
+      console.error('Login error:', error)
+      setError('An error occurred during login')
+      setIsLoading(false)
+    }
   }
 
   return (
