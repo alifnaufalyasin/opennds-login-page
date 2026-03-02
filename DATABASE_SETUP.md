@@ -23,7 +23,7 @@ sleep 5
 npm run dev
 ```
 
-**Note:** The `.env` file is required for Docker Compose to work. Make sure to create it from `.env.example` before running `docker compose up`.
+**Note:** The `.env` file is **required** for Docker Compose to work. If the file is missing or environment variables are not set, Docker Compose will show warnings like "The POSTGRES_USER variable is not set" and may fail to start the PostgreSQL container properly.
 
 ## Manual PostgreSQL Setup
 
