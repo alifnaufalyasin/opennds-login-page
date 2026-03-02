@@ -111,7 +111,6 @@ export async function deleteUser(id: number): Promise<boolean> {
 }
 
 // Authenticate user and update login times
-// Note: This function checks expiration time - expired users cannot login
 // Expiration starts from first login, not from user creation
 export async function authenticateUser(username: string, password: string): Promise<User | null> {
   const user = await getUserByUsername(username)

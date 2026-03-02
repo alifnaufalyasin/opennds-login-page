@@ -81,8 +81,8 @@ export async function POST(request: NextRequest) {
         )
       }
       
-      const expiredTime = duration || 'infinite'
-      const users = await generateUsers(count, prefix, expiredTime)
+      const expirationDuration = duration || 'infinite'
+      const users = await generateUsers(count, prefix, expirationDuration)
       
       return NextResponse.json({ 
         users: users.map(user => ({
