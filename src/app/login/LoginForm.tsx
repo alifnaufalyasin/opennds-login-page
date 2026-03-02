@@ -45,11 +45,7 @@ export function LoginForm() {
       }
       
       // Authentication successful, redirect to OpenNDS with all query parameters
-      const queryParams = new URLSearchParams()
-      searchParams.forEach((value, key) => {
-        queryParams.set(key, value)
-      })
-      const queryString = queryParams.toString()
+      const queryString = searchParams.toString()
       const redirectUrl = queryString 
         ? `http://10.1.1.1/opennds_auth/?${queryString}`
         : 'http://10.1.1.1/opennds_auth/'
