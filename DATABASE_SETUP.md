@@ -65,7 +65,7 @@ CREATE INDEX idx_users_username ON users(username);
 You can use the provided setup script to create sample users:
 
 ```bash
-node scripts/setup-db.mjs
+npx tsx scripts/setup-db.ts
 ```
 
 This will create:
