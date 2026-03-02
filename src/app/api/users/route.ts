@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAllUsers, createUser, updateUser, deleteUser, generateUsers, calculateExpirationTime } from '@/lib/users'
+import { getAllUsers, createUser, updateUser, deleteUser, generateUsers, resetUserExpiration } from '@/lib/users'
 import { initDatabase } from '@/lib/db'
 import { verifyAdminToken } from '@/lib/auth'
 
@@ -223,6 +223,61 @@ export async function DELETE(request: NextRequest) {
     console.error('Error deleting user:', error)
     return NextResponse.json(
       { error: 'Failed to delete user' },
+      { status: 500 }
+    )
+  }
+}
+
+// PATCH /api/users?id=123&action=reset-expiration - Reset user's expiration
+export async function PATCH(request: NextRequest) {
+  try {
+    await ensureDatabase()
+    
+    // Check authentication
+    const isAdmin = await verifyAdmin(request)
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+    
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+    const action = searchParams.get('action')
+    
+    if (!id) {
+      return NextResponse.json(
+        { error: 'User ID is required' },
+        { status: 400 }
+      )
+    }
+    
+    if (action === 'reset-expiration') {
+      const user = await resetUserExpiration(parseInt(id))
+      
+      return NextResponse.json({ 
+        user: { ...user, password: undefined },
+        message: 'User expiration reset successfully. Expiration will recalculate on next login.'
+      })
+    }
+    
+    return NextResponse.json(
+      { error: 'Invalid action' },
+      { status: 400 }
+    )
+  } catch (error: unknown) {
+    console.error('Error resetting user expiration:', error)
+    
+    if (error && typeof error === 'object' && 'message' in error && error.message === 'User not found') {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      )
+    }
+    
+    return NextResponse.json(
+      { error: 'Failed to reset user expiration' },
       { status: 500 }
     )
   }

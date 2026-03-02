@@ -254,6 +254,27 @@ export function AdminPanel() {
     }
   }
 
+  // Reset user expiration
+  const handleResetExpiration = async (userId: number) => {
+    try {
+      const response = await fetch(`/api/users?id=${userId}&action=reset-expiration`, {
+        method: 'PATCH',
+      })
+      
+      const data = await response.json()
+      
+      if (response.ok) {
+        fetchUsers()
+        setError('') // Clear any previous errors
+      } else {
+        setError(data.error || 'Failed to reset expiration')
+      }
+    } catch (err) {
+      setError('Failed to reset expiration')
+      console.error(err)
+    }
+  }
+
   // Generate bulk users
   const handleBulkGenerate = async () => {
     try {
@@ -390,10 +411,20 @@ export function AdminPanel() {
                           </Table.Cell>
                           <Table.Cell>{getExpiryStatus(user)}</Table.Cell>
                           <Table.Cell>
-                            <Flex gap={2}>
+                            <Flex gap={2} wrap="wrap">
                               <Button size="sm" onClick={() => handleEdit(user)}>
                                 Edit
                               </Button>
+                              {user.expiration_duration && user.expiration_duration !== 'infinite' && user.first_login && (
+                                <Button 
+                                  size="sm" 
+                                  colorScheme="yellow" 
+                                  onClick={() => handleResetExpiration(user.id)}
+                                  title="Reset expiration - user will get a fresh period on next login"
+                                >
+                                  Reset
+                                </Button>
+                              )}
                               <Button 
                                 size="sm" 
                                 colorScheme="red" 
