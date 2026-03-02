@@ -188,7 +188,11 @@ export function AdminPanel() {
       // If absolute mode, send expired_time
       if (expirationMode === 'duration') {
         body.expiration_duration = expirationDuration === 'infinite' ? null : expirationDuration
-        body.expired_time = null
+        // Only reset expired_time if user hasn't logged in yet (new user or hasn't logged in)
+        // This preserves the expiration time for users who have already logged in
+        if (!editingUser || !editingUser.first_login) {
+          body.expired_time = null
+        }
       } else {
         body.expired_time = expiredTime ? new Date(expiredTime).toISOString() : null
         body.expiration_duration = null
