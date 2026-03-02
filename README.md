@@ -137,7 +137,7 @@ docker exec -it login-page-postgres-1 psql -U postgres -d opennds -c \
 
 Or use the provided setup script (after starting the app once to create the schema):
 ```bash
-node scripts/setup-db.mjs
+npx tsx scripts/setup-db.ts
 ```
 
 ### Development
