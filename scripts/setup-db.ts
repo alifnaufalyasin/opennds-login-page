@@ -8,7 +8,7 @@
  */
 
 import { initDatabase } from '../src/lib/db.js'
-import { createUser, generateUsers, calculateExpirationTime } from '../src/lib/users.js'
+import { createUser, generateUsers } from '../src/lib/users.js'
 
 async function setup() {
   console.log('🚀 Initializing database...')
@@ -23,30 +23,32 @@ async function setup() {
     await createUser({
       username: 'admin',
       password: 'admin',
-      expired_time: null // Infinite access
+      expired_time: null, // Infinite access
+      expiration_duration: null
     })
     console.log('✅ Admin user created (username: admin, password: admin)')
     
-    // Create some test users
+    // Create some test users with duration-based expiration
     console.log('\n📝 Creating test users...')
     await createUser({
       username: 'testuser',
       password: 'test123',
-      expired_time: calculateExpirationTime('1week')
+      expired_time: null,
+      expiration_duration: '1week'
     })
-    console.log('✅ Test user created (username: testuser, password: test123, expires: 1 week)')
+    console.log('✅ Test user created (username: testuser, password: test123, expires: 1 week from first login)')
     
-    // Generate bulk users
+    // Generate bulk users with duration-based expiration
     console.log('\n📝 Generating bulk users...')
-    await generateUsers(5, 'guest', calculateExpirationTime('1day'))
-    console.log('✅ Generated 5 guest users (guest1/guest1 to guest5/guest5, expires: 1 day)')
+    await generateUsers(5, 'guest', '1day')
+    console.log('✅ Generated 5 guest users (guest1/guest1 to guest5/guest5, expires: 1 day from first login)')
     
     console.log('\n🎉 Database setup complete!')
     console.log('\n📋 Summary:')
     console.log('   - Admin user: admin/admin (infinite access)')
-    console.log('   - Test user: testuser/test123 (expires in 1 week)')
-    console.log('   - Guest users: guest1/guest1 to guest5/guest5 (expires in 1 day)')
-    console.log('\n🌐 Access the admin panel at: http://localhost:3000/admin')
+    console.log('   - Test user: testuser/test123 (expires 1 week after first login)')
+    console.log('   - Guest users: guest1/guest1 to guest5/guest5 (expires 1 day after first login)')
+    console.log('\n🌐 Access the admin panel at: http://localhost:3000/admin/login')
     
     process.exit(0)
   } catch (error) {
