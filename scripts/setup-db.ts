@@ -22,10 +22,10 @@ async function setup() {
     console.log('\n📝 Creating admin user...')
     await createUser({
       username: 'admin',
-      password: 'admin123',
+      password: 'admin',
       expired_time: null // Infinite access
     })
-    console.log('✅ Admin user created (username: admin, password: admin123)')
+    console.log('✅ Admin user created (username: admin, password: admin)')
     
     // Create some test users
     console.log('\n📝 Creating test users...')
@@ -43,7 +43,7 @@ async function setup() {
     
     console.log('\n🎉 Database setup complete!')
     console.log('\n📋 Summary:')
-    console.log('   - Admin user: admin/admin123 (infinite access)')
+    console.log('   - Admin user: admin/admin (infinite access)')
     console.log('   - Test user: testuser/test123 (expires in 1 week)')
     console.log('   - Guest users: guest1/guest1 to guest5/guest5 (expires in 1 day)')
     console.log('\n🌐 Access the admin panel at: http://localhost:3000/admin')
