@@ -1,10 +1,10 @@
-#!/usr/bin/env node
+#!/usr/bin/env tsx
 
 /**
  * Database Setup Script
  * 
  * This script initializes the database with some sample users for testing.
- * Run: node scripts/setup-db.js
+ * Run: npx tsx scripts/setup-db.ts
  */
 
 import { initDatabase } from '../src/lib/db.js'
