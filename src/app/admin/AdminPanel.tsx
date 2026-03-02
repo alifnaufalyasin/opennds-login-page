@@ -265,7 +265,6 @@ export function AdminPanel() {
       
       if (response.ok) {
         fetchUsers()
-        setError('') // Clear any previous errors
       } else {
         setError(data.error || 'Failed to reset expiration')
       }
