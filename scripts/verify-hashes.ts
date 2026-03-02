@@ -39,10 +39,19 @@ async function verifyHashes() {
   console.log(`Hash 3:       ${result3 ? '✓ VALID' : '✗ INVALID'}`)
   
   console.log('\n==========================================')
-  console.log('All different hashes verify correctly!')
-  console.log('==========================================')
   
-  process.exit(0)
+  // Check if all verifications passed
+  const allValid = readmeResult && result1 && result2 && result3
+  
+  if (allValid) {
+    console.log('All different hashes verify correctly!')
+    console.log('==========================================')
+    process.exit(0)
+  } else {
+    console.log('ERROR: Some hashes failed to verify!')
+    console.log('==========================================')
+    process.exit(1)
+  }
 }
 
 verifyHashes().catch((error) => {
