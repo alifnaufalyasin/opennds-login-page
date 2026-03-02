@@ -25,6 +25,7 @@ interface User {
   first_login: string | null
   last_login: string | null
   expired_time: string | null
+  expiration_duration: string | null
   created_at: string
 }
 
@@ -41,6 +42,8 @@ export function AdminPanel() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [expiredTime, setExpiredTime] = useState<string>('')
+  const [expirationMode, setExpirationMode] = useState<'duration' | 'absolute'>('duration')
+  const [expirationDuration, setExpirationDuration] = useState<string>('1day')
   
   // Bulk generation state
   const [bulkCount, setBulkCount] = useState(10)
@@ -151,6 +154,8 @@ export function AdminPanel() {
     setUsername('')
     setPassword('')
     setExpiredTime('')
+    setExpirationMode('duration')
+    setExpirationDuration('1day')
     onOpenUserDialog()
   }
 
@@ -159,7 +164,14 @@ export function AdminPanel() {
     setEditingUser(user)
     setUsername(user.username)
     setPassword('')
-    setExpiredTime(user.expired_time ? new Date(user.expired_time).toISOString().slice(0, 16) : '')
+    // If user has expiration_duration, use duration mode, otherwise use absolute mode
+    if (user.expiration_duration) {
+      setExpirationMode('duration')
+      setExpirationDuration(user.expiration_duration)
+    } else {
+      setExpirationMode('absolute')
+      setExpiredTime(user.expired_time ? new Date(user.expired_time).toISOString().slice(0, 16) : '')
+    }
     onOpenUserDialog()
   }
 
@@ -170,7 +182,16 @@ export function AdminPanel() {
       const body: Record<string, unknown> = {
         username,
         password: password || undefined,
-        expired_time: expiredTime ? new Date(expiredTime).toISOString() : null,
+      }
+      
+      // If duration mode, send expiration_duration
+      // If absolute mode, send expired_time
+      if (expirationMode === 'duration') {
+        body.expiration_duration = expirationDuration === 'infinite' ? null : expirationDuration
+        body.expired_time = null
+      } else {
+        body.expired_time = expiredTime ? new Date(expiredTime).toISOString() : null
+        body.expiration_duration = null
       }
       
       if (editingUser) {
@@ -267,12 +288,19 @@ export function AdminPanel() {
   }
 
   // Get expiry status
-  const getExpiryStatus = (expiredTime: string | null) => {
-    if (!expiredTime) {
+  const getExpiryStatus = (user: User) => {
+    // User has expiration_duration but hasn't logged in yet
+    if (user.expiration_duration && !user.first_login && user.expiration_duration !== 'infinite') {
+      return <Badge colorScheme="yellow">Pending first login</Badge>
+    }
+    
+    // User with infinite expiration or no expiration set
+    if (!user.expired_time) {
       return <Badge colorScheme="green">Infinite</Badge>
     }
     
-    if (isExpired(expiredTime)) {
+    // Check if expired
+    if (isExpired(user.expired_time)) {
       return <Badge colorScheme="red">Expired</Badge>
     }
     
@@ -345,9 +373,15 @@ export function AdminPanel() {
                           <Table.Cell>{formatDate(user.first_login)}</Table.Cell>
                           <Table.Cell>{formatDate(user.last_login)}</Table.Cell>
                           <Table.Cell>
-                            {user.expired_time ? formatDate(user.expired_time) : 'Infinite'}
+                            {user.expiration_duration && !user.first_login ? (
+                              `${user.expiration_duration} (from first login)`
+                            ) : user.expired_time ? (
+                              formatDate(user.expired_time)
+                            ) : (
+                              'Infinite'
+                            )}
                           </Table.Cell>
-                          <Table.Cell>{getExpiryStatus(user.expired_time)}</Table.Cell>
+                          <Table.Cell>{getExpiryStatus(user)}</Table.Cell>
                           <Table.Cell>
                             <Flex gap={2}>
                               <Button size="sm" onClick={() => handleEdit(user)}>
@@ -406,13 +440,65 @@ export function AdminPanel() {
                   </Field.Root>
                   
                   <Field.Root>
-                    <Field.Label>Expired Time (leave empty for infinite)</Field.Label>
-                    <Input
-                      type="datetime-local"
-                      value={expiredTime}
-                      onChange={(e) => setExpiredTime(e.target.value)}
-                    />
+                    <Field.Label>Expiration Mode</Field.Label>
+                    <select
+                      value={expirationMode}
+                      onChange={(e) => setExpirationMode(e.target.value as 'duration' | 'absolute')}
+                      style={{
+                        padding: '8px 12px',
+                        border: '1px solid #E2E8F0',
+                        borderRadius: '6px',
+                        width: '100%',
+                        fontSize: '14px'
+                      }}
+                    >
+                      <option value="duration">Duration from first login (Recommended)</option>
+                      <option value="absolute">Absolute date/time</option>
+                    </select>
+                    <Field.HelperText>
+                      Duration mode: Expiration starts when user logs in for the first time
+                    </Field.HelperText>
                   </Field.Root>
+                  
+                  {expirationMode === 'duration' ? (
+                    <Field.Root>
+                      <Field.Label>Expiration Duration</Field.Label>
+                      <select
+                        value={expirationDuration}
+                        onChange={(e) => setExpirationDuration(e.target.value)}
+                        style={{
+                          padding: '8px 12px',
+                          border: '1px solid #E2E8F0',
+                          borderRadius: '6px',
+                          width: '100%',
+                          fontSize: '14px'
+                        }}
+                      >
+                        <option value="1hour">1 Hour</option>
+                        <option value="12hours">12 Hours</option>
+                        <option value="1day">1 Day</option>
+                        <option value="3days">3 Days</option>
+                        <option value="1week">1 Week</option>
+                        <option value="1month">1 Month</option>
+                        <option value="infinite">Infinite</option>
+                      </select>
+                      <Field.HelperText>
+                        User will expire this duration after their first login
+                      </Field.HelperText>
+                    </Field.Root>
+                  ) : (
+                    <Field.Root>
+                      <Field.Label>Expired Time (leave empty for infinite)</Field.Label>
+                      <Input
+                        type="datetime-local"
+                        value={expiredTime}
+                        onChange={(e) => setExpiredTime(e.target.value)}
+                      />
+                      <Field.HelperText>
+                        User will expire at this specific date and time
+                      </Field.HelperText>
+                    </Field.Root>
+                  )}
                 </Stack>
               </Dialog.Body>
               <Dialog.Footer>

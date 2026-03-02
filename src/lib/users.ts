@@ -8,6 +8,7 @@ export interface User {
   first_login: Date | null
   last_login: Date | null
   expired_time: Date | null
+  expiration_duration: string | null
   created_at: Date
   updated_at: Date
 }
@@ -16,6 +17,7 @@ export interface CreateUserInput {
   username: string
   password: string
   expired_time?: Date | null
+  expiration_duration?: string | null
 }
 
 // Hash password
@@ -51,10 +53,10 @@ export async function createUser(input: CreateUserInput): Promise<User> {
   const hashedPassword = await hashPassword(input.password)
   
   const result = await pool.query(
-    `INSERT INTO users (username, password, expired_time) 
-     VALUES ($1, $2, $3) 
+    `INSERT INTO users (username, password, expired_time, expiration_duration) 
+     VALUES ($1, $2, $3, $4) 
      RETURNING *`,
-    [input.username, hashedPassword, input.expired_time || null]
+    [input.username, hashedPassword, input.expired_time || null, input.expiration_duration || null]
   )
   
   return result.rows[0]
@@ -85,6 +87,12 @@ export async function updateUser(id: number, input: Partial<CreateUserInput>): P
     paramCount++
   }
 
+  if (input.expiration_duration !== undefined) {
+    updates.push(`expiration_duration = $${paramCount}`)
+    values.push(input.expiration_duration)
+    paramCount++
+  }
+
   updates.push(`updated_at = CURRENT_TIMESTAMP`)
   values.push(id)
 
@@ -103,8 +111,7 @@ export async function deleteUser(id: number): Promise<boolean> {
 }
 
 // Authenticate user and update login times
-// Authenticate user and update login times
-// Note: This function checks expiration time - expired users cannot login
+// Expiration starts from first login, not from user creation
 export async function authenticateUser(username: string, password: string): Promise<User | null> {
   const user = await getUserByUsername(username)
   
@@ -125,14 +132,26 @@ export async function authenticateUser(username: string, password: string): Prom
 
   // Update login times
   const now = new Date()
-  const updates = user.first_login 
-    ? 'last_login = $1' 
-    : 'first_login = $1, last_login = $1'
+  
+  // On first login, calculate and set expiration time based on expiration_duration
+  if (!user.first_login && user.expiration_duration && user.expiration_duration !== 'infinite') {
+    const expirationTime = calculateExpirationTime(user.expiration_duration)
+    
+    await pool.query(
+      `UPDATE users SET first_login = $1, last_login = $1, expired_time = $2 WHERE id = $3`,
+      [now, expirationTime, user.id]
+    )
+  } else {
+    // Regular login time update
+    const updates = user.first_login 
+      ? 'last_login = $1' 
+      : 'first_login = $1, last_login = $1'
 
-  await pool.query(
-    `UPDATE users SET ${updates} WHERE id = $2`,
-    [now, user.id]
-  )
+    await pool.query(
+      `UPDATE users SET ${updates} WHERE id = $2`,
+      [now, user.id]
+    )
+  }
 
   // Return updated user
   const updatedUser = await pool.query(
@@ -147,7 +166,7 @@ export async function authenticateUser(username: string, password: string): Prom
 export async function generateUsers(
   count: number,
   prefix: string,
-  expiredTime: Date | null
+  expirationDuration: string | null
 ): Promise<User[]> {
   const users: User[] = []
   
@@ -159,7 +178,8 @@ export async function generateUsers(
       const user = await createUser({
         username,
         password,
-        expired_time: expiredTime
+        expired_time: null, // Will be set on first login
+        expiration_duration: expirationDuration
       })
       users.push(user)
     } catch (error) {
