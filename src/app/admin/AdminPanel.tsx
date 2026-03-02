@@ -188,7 +188,14 @@ export function AdminPanel() {
       // If absolute mode, send expired_time
       if (expirationMode === 'duration') {
         body.expiration_duration = expirationDuration === 'infinite' ? null : expirationDuration
-        body.expired_time = null
+        // Set expired_time to null only when:
+        // 1. Creating a new user (!editingUser), OR
+        // 2. Editing a user who hasn't logged in yet (!editingUser.first_login), OR
+        // 3. Admin explicitly sets to infinite (expirationDuration === 'infinite')
+        // Otherwise, preserve the existing expired_time for logged-in users
+        if (!editingUser || !editingUser.first_login || expirationDuration === 'infinite') {
+          body.expired_time = null
+        }
       } else {
         body.expired_time = expiredTime ? new Date(expiredTime).toISOString() : null
         body.expiration_duration = null
@@ -243,6 +250,26 @@ export function AdminPanel() {
       }
     } catch (err) {
       setError('Failed to delete user')
+      console.error(err)
+    }
+  }
+
+  // Reset user expiration
+  const handleResetExpiration = async (userId: number) => {
+    try {
+      const response = await fetch(`/api/users?id=${userId}&action=reset-expiration`, {
+        method: 'PATCH',
+      })
+      
+      const data = await response.json()
+      
+      if (response.ok) {
+        fetchUsers()
+      } else {
+        setError(data.error || 'Failed to reset expiration')
+      }
+    } catch (err) {
+      setError('Failed to reset expiration')
       console.error(err)
     }
   }
@@ -383,10 +410,20 @@ export function AdminPanel() {
                           </Table.Cell>
                           <Table.Cell>{getExpiryStatus(user)}</Table.Cell>
                           <Table.Cell>
-                            <Flex gap={2}>
+                            <Flex gap={2} wrap="wrap">
                               <Button size="sm" onClick={() => handleEdit(user)}>
                                 Edit
                               </Button>
+                              {user.expiration_duration && user.expiration_duration !== 'infinite' && user.first_login && (
+                                <Button 
+                                  size="sm" 
+                                  colorScheme="yellow" 
+                                  onClick={() => handleResetExpiration(user.id)}
+                                  title="Reset expiration - user will get a fresh period on next login"
+                                >
+                                  Reset
+                                </Button>
+                              )}
                               <Button 
                                 size="sm" 
                                 colorScheme="red" 

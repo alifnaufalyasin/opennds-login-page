@@ -215,3 +215,25 @@ export function calculateExpirationTime(duration: string): Date | null {
       return null
   }
 }
+
+// Reset user's expiration by clearing login history
+// This allows expiration to recalculate on next login if user has expiration_duration set
+export async function resetUserExpiration(id: number): Promise<User> {
+  // Reset first_login, last_login, and expired_time so expiration recalculates on next login
+  const result = await pool.query(
+    `UPDATE users 
+     SET first_login = NULL, 
+         last_login = NULL, 
+         expired_time = NULL,
+         updated_at = CURRENT_TIMESTAMP 
+     WHERE id = $1 
+     RETURNING *`,
+    [id]
+  )
+
+  if (result.rowCount === 0) {
+    throw new Error('User not found')
+  }
+
+  return result.rows[0]
+}
