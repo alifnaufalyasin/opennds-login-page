@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
         )
       }
       
-      const expiredTime = calculateExpirationTime(duration || 'infinite')
+      const expiredTime = duration || 'infinite'
       const users = await generateUsers(count, prefix, expiredTime)
       
       return NextResponse.json({ 
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Single user creation
-    const { username, password, expired_time } = body
+    const { username, password, expired_time, expiration_duration } = body
     
     if (!username || !password) {
       return NextResponse.json(
@@ -103,10 +103,13 @@ export async function POST(request: NextRequest) {
       )
     }
     
+    // If expiration_duration is provided, use it (new behavior - expiration starts from first login)
+    // Otherwise, use expired_time for backward compatibility (old behavior - absolute expiration)
     const user = await createUser({
       username,
       password,
-      expired_time: expired_time ? new Date(expired_time) : null
+      expired_time: expiration_duration ? null : (expired_time ? new Date(expired_time) : null),
+      expiration_duration: expiration_duration || null
     })
     
     return NextResponse.json({ 
@@ -145,7 +148,7 @@ export async function PUT(request: NextRequest) {
     }
     
     const body = await request.json()
-    const { id, username, password, expired_time } = body
+    const { id, username, password, expired_time, expiration_duration } = body
     
     if (!id) {
       return NextResponse.json(
@@ -157,7 +160,8 @@ export async function PUT(request: NextRequest) {
     const user = await updateUser(id, {
       username,
       password,
-      expired_time: expired_time === null ? null : (expired_time ? new Date(expired_time) : undefined)
+      expired_time: expired_time === null ? null : (expired_time ? new Date(expired_time) : undefined),
+      expiration_duration: expiration_duration === null ? null : (expiration_duration || undefined)
     })
     
     return NextResponse.json({ 

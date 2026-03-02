@@ -21,10 +21,19 @@ export async function initDatabase() {
         first_login TIMESTAMP,
         last_login TIMESTAMP,
         expired_time TIMESTAMP,
+        expiration_duration VARCHAR(50),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `)
+    
+    // Add expiration_duration column if it doesn't exist (for existing databases)
+    await client.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS expiration_duration VARCHAR(50)
+    `).catch(() => {
+      // Ignore if column already exists
+    })
     
     // Create index on username for faster lookups (ignore if exists)
     await client.query(`
