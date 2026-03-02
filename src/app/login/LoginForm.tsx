@@ -20,23 +20,9 @@ export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const hid = searchParams.get('hid') || ''
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    
-    // Validate that hid parameter exists and is alphanumeric
-    if (!hid) {
-      setError('Missing hid parameter in URL')
-      return
-    }
-
-    // Basic validation: hid should be alphanumeric and not empty
-    if (!/^[a-zA-Z0-9]+$/.test(hid)) {
-      setError('Invalid session ID format')
-      return
-    }
 
     setIsLoading(true)
     
@@ -58,8 +44,16 @@ export function LoginForm() {
         return
       }
       
-      // Authentication successful, redirect to OpenNDS
-      window.location.href = `http://10.1.1.1/opennds_auth/?hid=${encodeURIComponent(hid)}`
+      // Authentication successful, redirect to OpenNDS with all query parameters
+      const queryParams = new URLSearchParams()
+      searchParams.forEach((value, key) => {
+        queryParams.set(key, value)
+      })
+      const queryString = queryParams.toString()
+      const redirectUrl = queryString 
+        ? `http://10.1.1.1/opennds_auth/?${queryString}`
+        : 'http://10.1.1.1/opennds_auth/'
+      window.location.href = redirectUrl
     } catch (error) {
       console.error('Login error:', error)
       setError('An error occurred during login')
@@ -109,14 +103,6 @@ export function LoginForm() {
                       size="lg"
                     />
                   </Box>
-
-                  {hid && (
-                    <Box>
-                      <Text fontSize="sm" color="gray.500">
-                        Session ID: {hid}
-                      </Text>
-                    </Box>
-                  )}
 
                   <Button
                     type="submit"
