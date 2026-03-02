@@ -7,6 +7,12 @@ This guide will help you set up the PostgreSQL database for the OpenNDS Login ap
 The easiest way to get started is using Docker Compose:
 
 ```bash
+# Copy the environment template and configure your database credentials
+cp .env.example .env
+
+# Edit .env to customize database credentials (required)
+# Set values for: POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
+
 # Start PostgreSQL
 docker compose up -d postgres
 
@@ -16,6 +22,8 @@ sleep 5
 # The application will automatically create the schema on first use
 npm run dev
 ```
+
+**Note:** The `.env` file is **required** for Docker Compose to work. If the file is missing or environment variables are not set, Docker Compose will show warnings like "The POSTGRES_USER variable is not set" and may fail to start the PostgreSQL container properly.
 
 ## Manual PostgreSQL Setup
 
@@ -67,12 +75,35 @@ This will create:
 
 ## Environment Variables
 
-Create a `.env` file in the root directory:
+Create a `.env` file in the root directory (you can copy from `.env.example`):
+
+```bash
+cp .env.example .env
+```
+
+The `.env` file should contain:
 
 ```env
-# PostgreSQL Connection
+# PostgreSQL Database Configuration for Docker Compose
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=opennds
+
+# PostgreSQL Connection for the application
+# IMPORTANT: Update username and password here to match POSTGRES_USER and POSTGRES_PASSWORD above
+# Note: Use 'localhost' as hostname when running the app outside Docker
+# Use 'postgres' (the service name) as hostname when running the app inside Docker
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/opennds
+
+# Admin JWT Secret
+ADMIN_JWT_SECRET=your-secret-key-change-in-production
 ```
+
+**Important:** 
+- Keep the username and password in `DATABASE_URL` in sync with `POSTGRES_USER` and `POSTGRES_PASSWORD`.
+- If you customize the Docker database credentials, make sure to update all three variables accordingly.
+- When running the Next.js app outside Docker (e.g., `npm run dev`), use `localhost` as the hostname in `DATABASE_URL`.
+- When running the Next.js app inside Docker, use `postgres` (the Docker service name) as the hostname in `DATABASE_URL`.
 
 ## Accessing the Admin Panel
 

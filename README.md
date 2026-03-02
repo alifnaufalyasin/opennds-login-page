@@ -93,12 +93,35 @@ npm install
 
 2. Configure PostgreSQL connection:
 
-Create a `.env` file in the root directory:
+Create a `.env` file in the root directory (copy from `.env.example`):
+
+```bash
+cp .env.example .env
+```
+
+Then edit the `.env` file:
 
 ```env
-DATABASE_URL=postgresql://username:password@localhost:5432/opennds
+# PostgreSQL Database Configuration for Docker Compose
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=opennds
+
+# PostgreSQL Connection for the application
+# IMPORTANT: Update username and password here to match POSTGRES_USER and POSTGRES_PASSWORD above
+# Note: Use 'localhost' as hostname when running the app outside Docker
+# Use 'postgres' (the service name) as hostname when running the app inside Docker
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/opennds
+
+# Admin JWT Secret
 ADMIN_JWT_SECRET=your-secret-key-change-in-production
 ```
+
+**Note:** 
+- Keep the username and password in `DATABASE_URL` in sync with `POSTGRES_USER` and `POSTGRES_PASSWORD`.
+- If using Docker Compose, the database credentials will be used by the PostgreSQL container.
+- When running the Next.js app outside Docker (e.g., `npm run dev`), use `localhost` as the hostname in `DATABASE_URL`.
+- When running the Next.js app inside Docker, use `postgres` (the Docker service name) as the hostname in `DATABASE_URL`.
 
 3. The database schema will be automatically created on first API request.
 
